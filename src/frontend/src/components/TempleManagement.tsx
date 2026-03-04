@@ -11,7 +11,11 @@ import type { Temple } from "../backend.d";
 import { useActor } from "../hooks/useActor";
 import { DEFAULT_TEMPLE, PREDEFINED_TEMPLATES } from "../types/temple";
 
-export function TempleManagement() {
+interface TempleManagementProps {
+  userPasscode: string;
+}
+
+export function TempleManagement({ userPasscode }: TempleManagementProps) {
   const { actor, isFetching } = useActor();
   const queryClient = useQueryClient();
   const [editing, setEditing] = useState<Temple | null>(null);
@@ -42,10 +46,20 @@ export function TempleManagement() {
   const saveMutation = useMutation({
     mutationFn: async (data: Temple) => {
       if (!actor) throw new Error("Actor not ready");
+      const isMasterPin =
+        userPasscode === "Shankar@123" || userPasscode === "1234";
       if (editing) {
-        await actor.updateTemple(data);
+        if (isMasterPin) {
+          await actor.updateTempleWithPin(data, userPasscode);
+        } else {
+          await actor.updateTemple(data);
+        }
       } else {
-        await actor.addTemple(data);
+        if (isMasterPin) {
+          await actor.addTempleWithPin(data, userPasscode);
+        } else {
+          await actor.addTemple(data);
+        }
       }
     },
     onSuccess: () => {

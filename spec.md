@@ -1,40 +1,48 @@
 # Mahadev Mandir Donation Manager
 
 ## Current State
-New project. No existing code.
+
+Full-stack temple donation management app with:
+- Backend: Motoko with Temple, Donation, AppUser, AuditLog types
+- Frontend: React + TypeScript with Master/Admin/Volunteer roles
+- Master login is hardcoded (ID: "MASTER", Password: "1234" or "Shankar@123") — not ICP principal-based
+- Backend `addTemple`, `updateTemple`, `deleteTemple` require `#admin` ICP role (canister deployer)
+- Backend `getUser`, `addUser` also require `#admin` ICP role
+- Master login session is stored in localStorage with `role: "master"`
+- Anonymous ICP caller gets `#guest` role — cannot call `#admin` functions
+- **BUG**: When hardcoded Master logs in and tries to add/update a temple, the backend rejects with "Unauthorized" because the ICP caller is anonymous, not a canister-level admin
 
 ## Requested Changes (Diff)
 
 ### Add
-- **Authentication**: Role-based login system with three roles: Master (मुख्य), Admin (प्रबंधक), Volunteer (सदस्य)
-- **Temple Management** (Master only): Register and configure multiple temples with name, address, and 4 customizable appeal paragraphs/text blocks used on receipts
-- **User Management** (Master + Admin): Add volunteers and admins with unique IDs, passcodes, assign to temples; toggle active/inactive status
-- **Donation Form**: Receipt entry form with receipt number (auto-increment from 108), date, temple type selector, donation type selector (changes based on temple type), donor name, amount, address; supports edit mode
-- **Ledger / Report**: Searchable table of all donations for user's temple, shows receipt ID, time, name, event, amount; VIEW (receipt preview), EDIT, DELETE (admin only with reason prompt)
-- **Receipt Preview**: A5-sized printable/PDF-downloadable receipt in Hindi with temple name, address, appeal paragraphs, donor details, amount in words (Hindi), volunteer signature
-- **Audit Log**: Track edits and deletes with reason, actor, timestamp
-- **Offline Support**: App works offline; data syncs when connection is restored
-- **Online indicator**: Pulsing green/red dot in header showing sync status
-- **Predefined templates**: Dropdown to select preset appeal text paragraphs for temple setup
-- **Amount in Hindi words**: Convert numeric amount to Hindi words (e.g. "पाँच सौ")
-- **Temple Types**: Shiv, Hanuman, Durga, Ram, Kali, Ganesh, Other — each with relevant donation event types
+- Backend: `masterPin` state variable (hardcoded as "Shankar@123" and "1234" accepted)
+- Backend: New `addTempleWithPin(temple, pin)` function that accepts master PIN instead of ICP admin role
+- Backend: New `updateTempleWithPin(temple, pin)` function with PIN auth
+- Backend: New `deleteTempleWithPin(id, pin)` function with PIN auth
+- Backend: New `addUserWithPin(input, pin)` function with PIN auth
+- Backend: New `updateUserWithPin(id, input, pin)` function with PIN auth
+- Backend: New `toggleUserStatusWithPin(id, pin)` function with PIN auth
+- Backend: New `getUserWithPin(id, pin)` function with PIN auth — for login lookup
+- Backend: New `getUsersByTempleWithPin(templeId, pin)` function with PIN auth
+- Backend: New `createDonationWithPin(input, pin)` function — for master creating donations without temple access check
+- Frontend: Pass `user.passcode` (master PIN) to all temple management and user management functions
+- Frontend: `TempleManagement` — use `addTempleWithPin` / `updateTempleWithPin` when `user.role === "master"`
+- Frontend: `UserManagement` — use `addUserWithPin` / `toggleUserStatusWithPin` / `getUsersByTempleWithPin`
+- Frontend: `App.tsx` login — use `getUserWithPin` with master PIN for admin/volunteer lookup
+- Frontend: Update `backend.d.ts` types to include new PIN-based functions
 
 ### Modify
-- Nothing (new project)
+- Backend: Keep all existing functions unchanged for backward compatibility
+- Backend: `isCallerMasterByPin(pin)` private helper — returns true if pin matches MASTER_PIN_1 or MASTER_PIN_2
 
 ### Remove
-- Nothing (new project)
+- Nothing removed
 
 ## Implementation Plan
-1. Backend: User authentication (Master hardcoded, Admin/Volunteer stored in DB), Temple CRUD, Donation CRUD, Volunteer/Admin CRUD, Audit log creation
-2. Backend: Data model for Temple (id, name, address, appeal1-3, rules), Donation (recNo, formattedId, name, amount, date, time, address, volunteer, templeId, templeType, event, timestamp), User (name, passcode, status, templeId, role)
-3. Frontend: LoginScreen with role selector, User ID, password, Google link button
-4. Frontend: Main app shell with sticky nav (role-colored), tab navigation (Management/User Setup/Receipt/Report)
-5. Frontend: TempleManagement component with form + predefined template selectors
-6. Frontend: UserManagement component with Members/Admins toggle, add form, list with status toggle
-7. Frontend: DonationForm with temple type + event type cascading selects, receipt number display, save defaults checkbox
-8. Frontend: Ledger table with search, VIEW/EDIT/DELETE actions
-9. Frontend: ReceiptPreview modal — A5 layout, PDF export via html2canvas + jsPDF
-10. Frontend: ReasonPrompt modal for delete/edit confirmation with audit reason
-11. Frontend: Hindi number-to-words converter utility
-12. Frontend: Online/offline detection and display
+
+1. Regenerate backend with PIN-based auth functions added alongside existing ICP role-based functions
+2. Update `backend.d.ts` with new function signatures
+3. Update `TempleManagement.tsx` to call `addTempleWithPin`/`updateTempleWithPin` passing `user.passcode` from session
+4. Update `UserManagement.tsx` to use PIN-based functions
+5. Update `App.tsx` login handler to use `getUserWithPin` for volunteer/admin lookup
+6. Build and deploy

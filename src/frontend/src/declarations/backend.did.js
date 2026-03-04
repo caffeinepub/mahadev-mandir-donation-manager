@@ -42,7 +42,6 @@ export const CreateDonationInput = IDL.Record({
   'address' : IDL.Text,
   'templeId' : IDL.Text,
   'amount' : IDL.Nat,
-  'recNo' : IDL.Nat,
 });
 export const Donation = IDL.Record({
   'volunteerName' : IDL.Text,
@@ -89,12 +88,20 @@ export const AppUser = IDL.Record({
 export const idlService = IDL.Service({
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
   'addTemple' : IDL.Func([Temple], [], []),
+  'addTempleWithPin' : IDL.Func([Temple, IDL.Text], [], []),
   'addUser' : IDL.Func([CreateUserInput], [], []),
+  'addUserWithPin' : IDL.Func([CreateUserInput, IDL.Text], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
   'createDonation' : IDL.Func([CreateDonationInput], [Donation], []),
+  'createDonationForTemple' : IDL.Func(
+      [CreateDonationInput, IDL.Text],
+      [Donation],
+      [],
+    ),
   'deactivateUser' : IDL.Func([IDL.Text], [], []),
   'deleteDonation' : IDL.Func([IDL.Text, IDL.Text], [], []),
   'deleteTemple' : IDL.Func([IDL.Text], [], []),
+  'deleteTempleWithPin' : IDL.Func([IDL.Text, IDL.Text], [], []),
   'getAllTemples' : IDL.Func([], [IDL.Vec(Temple)], ['query']),
   'getAuditLogsByReceipt' : IDL.Func(
       [IDL.Text],
@@ -114,13 +121,22 @@ export const idlService = IDL.Service({
       [IDL.Opt(UserProfile)],
       ['query'],
     ),
+  'getUserWithPin' : IDL.Func([IDL.Text, IDL.Text], [AppUser], ['query']),
   'getUsersByTemple' : IDL.Func([IDL.Text], [IDL.Vec(AppUser)], ['query']),
+  'getUsersByTempleWithPin' : IDL.Func(
+      [IDL.Text, IDL.Text],
+      [IDL.Vec(AppUser)],
+      ['query'],
+    ),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
   'toggleUserStatus' : IDL.Func([IDL.Text], [], []),
+  'toggleUserStatusWithPin' : IDL.Func([IDL.Text, IDL.Text], [], []),
   'updateDonation' : IDL.Func([IDL.Text, Donation, IDL.Text], [], []),
   'updateTemple' : IDL.Func([Temple], [], []),
+  'updateTempleWithPin' : IDL.Func([Temple, IDL.Text], [], []),
   'updateUser' : IDL.Func([IDL.Text, CreateUserInput], [], []),
+  'updateUserWithPin' : IDL.Func([IDL.Text, CreateUserInput, IDL.Text], [], []),
 });
 
 export const idlInitArgs = [];
@@ -160,7 +176,6 @@ export const idlFactory = ({ IDL }) => {
     'address' : IDL.Text,
     'templeId' : IDL.Text,
     'amount' : IDL.Nat,
-    'recNo' : IDL.Nat,
   });
   const Donation = IDL.Record({
     'volunteerName' : IDL.Text,
@@ -207,12 +222,20 @@ export const idlFactory = ({ IDL }) => {
   return IDL.Service({
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
     'addTemple' : IDL.Func([Temple], [], []),
+    'addTempleWithPin' : IDL.Func([Temple, IDL.Text], [], []),
     'addUser' : IDL.Func([CreateUserInput], [], []),
+    'addUserWithPin' : IDL.Func([CreateUserInput, IDL.Text], [], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
     'createDonation' : IDL.Func([CreateDonationInput], [Donation], []),
+    'createDonationForTemple' : IDL.Func(
+        [CreateDonationInput, IDL.Text],
+        [Donation],
+        [],
+      ),
     'deactivateUser' : IDL.Func([IDL.Text], [], []),
     'deleteDonation' : IDL.Func([IDL.Text, IDL.Text], [], []),
     'deleteTemple' : IDL.Func([IDL.Text], [], []),
+    'deleteTempleWithPin' : IDL.Func([IDL.Text, IDL.Text], [], []),
     'getAllTemples' : IDL.Func([], [IDL.Vec(Temple)], ['query']),
     'getAuditLogsByReceipt' : IDL.Func(
         [IDL.Text],
@@ -240,13 +263,26 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Opt(UserProfile)],
         ['query'],
       ),
+    'getUserWithPin' : IDL.Func([IDL.Text, IDL.Text], [AppUser], ['query']),
     'getUsersByTemple' : IDL.Func([IDL.Text], [IDL.Vec(AppUser)], ['query']),
+    'getUsersByTempleWithPin' : IDL.Func(
+        [IDL.Text, IDL.Text],
+        [IDL.Vec(AppUser)],
+        ['query'],
+      ),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
     'toggleUserStatus' : IDL.Func([IDL.Text], [], []),
+    'toggleUserStatusWithPin' : IDL.Func([IDL.Text, IDL.Text], [], []),
     'updateDonation' : IDL.Func([IDL.Text, Donation, IDL.Text], [], []),
     'updateTemple' : IDL.Func([Temple], [], []),
+    'updateTempleWithPin' : IDL.Func([Temple, IDL.Text], [], []),
     'updateUser' : IDL.Func([IDL.Text, CreateUserInput], [], []),
+    'updateUserWithPin' : IDL.Func(
+        [IDL.Text, CreateUserInput, IDL.Text],
+        [],
+        [],
+      ),
   });
 };
 

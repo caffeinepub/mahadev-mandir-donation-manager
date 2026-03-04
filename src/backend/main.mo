@@ -6,10 +6,13 @@ import Order "mo:core/Order";
 import Runtime "mo:core/Runtime";
 import Iter "mo:core/Iter";
 import Nat "mo:core/Nat";
+import Int "mo:core/Int";
 import Principal "mo:core/Principal";
+import Migration "migration";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 
+(with migration = Migration.run)
 actor {
   // Types
   public type Temple = {
@@ -83,7 +86,6 @@ actor {
   };
 
   public type CreateDonationInput = {
-    recNo : Nat;
     formattedId : Text;
     donorName : Text;
     amount : Nat;
@@ -125,6 +127,10 @@ actor {
   include MixinAuthorization(accessControlState);
 
   // Helper Functions
+  private func isValidMasterPin(pin : Text) : Bool {
+    pin == "Shankar@123" or pin == "1234";
+  };
+
   private func getAppUserForCaller(caller : Principal) : ?AppUser {
     switch (principalToAppUser.get(caller)) {
       case (?appUserId) { users.get(appUserId) };
@@ -168,7 +174,7 @@ actor {
     oldData : ?Text,
     newData : ?Text,
   ) : () {
-    let id = receiptId.concat("-".concat(Int.toText(Time.now())));
+    let id = receiptId.concat("-".concat(Time.now().toText()));
     let log : AuditLog = {
       id;
       logType;
@@ -204,7 +210,7 @@ actor {
       Runtime.trap("Unauthorized: Only users can save profiles");
     };
     userProfiles.add(caller, profile);
-    
+
     // Link Principal to AppUser if provided
     switch (profile.appUserId) {
       case (?appUserId) {
@@ -214,7 +220,7 @@ actor {
     };
   };
 
-  // Temple Functions (Master/Admin only)
+  // Temple Functions (ICP role-based)
   public query ({ caller }) func getTemple(id : Text) : async Temple {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only authenticated users can view temples");
@@ -234,21 +240,46 @@ actor {
 
   public shared ({ caller }) func addTemple(temple : Temple) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
-      Runtime.trap("Unauthorized: Only Master can manage temples");
+      Runtime.trap("Unauthorized: Only admins can manage temples");
     };
     temples.add(temple.id, temple);
   };
 
   public shared ({ caller }) func updateTemple(temple : Temple) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
-      Runtime.trap("Unauthorized: Only Master can manage temples");
+      Runtime.trap("Unauthorized: Only admins can manage temples");
     };
     temples.add(temple.id, temple);
   };
 
   public shared ({ caller }) func deleteTemple(id : Text) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
-      Runtime.trap("Unauthorized: Only Master can manage temples");
+      Runtime.trap("Unauthorized: Only admins can manage temples");
+    };
+    if (not temples.containsKey(id)) {
+      Runtime.trap("Temple not found");
+    };
+    temples.remove(id);
+  };
+
+  // Temple Functions (PIN-based)
+  public shared func addTempleWithPin(temple : Temple, pin : Text) : async () {
+    if (not isValidMasterPin(pin)) {
+      Runtime.trap("Unauthorized: Invalid master PIN");
+    };
+    temples.add(temple.id, temple);
+  };
+
+  public shared func updateTempleWithPin(temple : Temple, pin : Text) : async () {
+    if (not isValidMasterPin(pin)) {
+      Runtime.trap("Unauthorized: Invalid master PIN");
+    };
+    temples.add(temple.id, temple);
+  };
+
+  public shared func deleteTempleWithPin(id : Text, pin : Text) : async () {
+    if (not isValidMasterPin(pin)) {
+      Runtime.trap("Unauthorized: Invalid master PIN");
     };
     if (not temples.containsKey(id)) {
       Runtime.trap("Temple not found");
@@ -265,6 +296,31 @@ actor {
     // Verify volunteer can create for this temple
     if (not canAccessTemple(caller, input.templeId)) {
       Runtime.trap("Unauthorized: You can only create donations for your assigned temple");
+    };
+
+    let recNo = getNextReceiptNumberInternal(input.templeId);
+    let donation : Donation = {
+      recNo;
+      formattedId = input.formattedId;
+      donorName = input.donorName;
+      amount = input.amount;
+      date = input.date;
+      time = input.time;
+      address = input.address;
+      volunteerName = input.volunteerName;
+      templeId = input.templeId;
+      templeType = input.templeType;
+      event = input.event;
+      timestamp = Time.now();
+    };
+
+    donations.add(input.formattedId, donation);
+    donation;
+  };
+
+  public shared func createDonationForTemple(input : CreateDonationInput, pin : Text) : async Donation {
+    if (not isValidMasterPin(pin)) {
+      Runtime.trap("Unauthorized: Invalid master PIN");
     };
 
     let recNo = getNextReceiptNumberInternal(input.templeId);
@@ -380,51 +436,21 @@ actor {
     donations.values().filter(func(donation) { donation.templeId == templeId }).toArray();
   };
 
-  // User Functions
+  // User Functions (ICP role-based)
   public query ({ caller }) func getUser(id : Text) : async AppUser {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only Admin/Master can view user details");
     };
 
-    let user = switch (users.get(id)) {
-      case (?u) { u };
+    switch (users.get(id)) {
+      case (?user) { user };
       case (null) { Runtime.trap("User not found") };
     };
-
-    // Non-master admins can only view users in their temple
-    if (not isCallerMaster(caller)) {
-      switch (getAppUserForCaller(caller)) {
-        case (?callerUser) {
-          if (user.templeId != callerUser.templeId) {
-            Runtime.trap("Unauthorized: You can only view users in your temple");
-          };
-        };
-        case (null) {
-          Runtime.trap("Unauthorized: Admin user profile not found");
-        };
-      };
-    };
-
-    user;
   };
 
   public query ({ caller }) func getUsersByTemple(templeId : Text) : async [AppUser] {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only Admin/Master can view users");
-    };
-
-    // Non-master admins can only view users in their temple
-    if (not isCallerMaster(caller)) {
-      switch (getAppUserForCaller(caller)) {
-        case (?callerUser) {
-          if (templeId != callerUser.templeId) {
-            Runtime.trap("Unauthorized: You can only view users in your temple");
-          };
-        };
-        case (null) {
-          Runtime.trap("Unauthorized: Admin user profile not found");
-        };
-      };
     };
 
     users.values().filter(func(user) { user.templeId == templeId }).toArray();
@@ -433,20 +459,6 @@ actor {
   public shared ({ caller }) func addUser(input : CreateUserInput) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only Admin/Master can add users");
-    };
-
-    // Non-master admins can only add users to their temple
-    if (not isCallerMaster(caller)) {
-      switch (getAppUserForCaller(caller)) {
-        case (?callerUser) {
-          if (input.templeId != callerUser.templeId) {
-            Runtime.trap("Unauthorized: You can only add users to your temple");
-          };
-        };
-        case (null) {
-          Runtime.trap("Unauthorized: Admin user profile not found");
-        };
-      };
     };
 
     let user : AppUser = {
@@ -471,20 +483,6 @@ actor {
       case (null) { Runtime.trap("User not found") };
     };
 
-    // Non-master admins can only update users in their temple
-    if (not isCallerMaster(caller)) {
-      switch (getAppUserForCaller(caller)) {
-        case (?callerUser) {
-          if (existingUser.templeId != callerUser.templeId or input.templeId != callerUser.templeId) {
-            Runtime.trap("Unauthorized: You can only update users in your temple");
-          };
-        };
-        case (null) {
-          Runtime.trap("Unauthorized: Admin user profile not found");
-        };
-      };
-    };
-
     let user : AppUser = {
       id = input.id;
       name = input.name;
@@ -507,20 +505,6 @@ actor {
       case (null) { Runtime.trap("User not found") };
     };
 
-    // Non-master admins can only toggle users in their temple
-    if (not isCallerMaster(caller)) {
-      switch (getAppUserForCaller(caller)) {
-        case (?callerUser) {
-          if (user.templeId != callerUser.templeId) {
-            Runtime.trap("Unauthorized: You can only toggle users in your temple");
-          };
-        };
-        case (null) {
-          Runtime.trap("Unauthorized: Admin user profile not found");
-        };
-      };
-    };
-
     let newStatus = if (user.status == "active") { "inactive" } else { "active" };
     let updatedUser = { user with status = newStatus };
     users.add(id, updatedUser);
@@ -536,21 +520,81 @@ actor {
       case (null) { Runtime.trap("User not found") };
     };
 
-    // Non-master admins can only deactivate users in their temple
-    if (not isCallerMaster(caller)) {
-      switch (getAppUserForCaller(caller)) {
-        case (?callerUser) {
-          if (user.templeId != callerUser.templeId) {
-            Runtime.trap("Unauthorized: You can only deactivate users in your temple");
-          };
-        };
-        case (null) {
-          Runtime.trap("Unauthorized: Admin user profile not found");
-        };
-      };
+    let updatedUser = { user with status = "inactive" };
+    users.add(id, updatedUser);
+  };
+
+  // User Functions (PIN-based)
+  public query func getUserWithPin(id : Text, pin : Text) : async AppUser {
+    if (not isValidMasterPin(pin)) {
+      Runtime.trap("Unauthorized: Invalid master PIN");
     };
 
-    let updatedUser = { user with status = "inactive" };
+    switch (users.get(id)) {
+      case (?user) { user };
+      case (null) { Runtime.trap("User not found") };
+    };
+  };
+
+  public query func getUsersByTempleWithPin(templeId : Text, pin : Text) : async [AppUser] {
+    if (not isValidMasterPin(pin)) {
+      Runtime.trap("Unauthorized: Invalid master PIN");
+    };
+
+    users.values().filter(func(user) { user.templeId == templeId }).toArray();
+  };
+
+  public shared func addUserWithPin(input : CreateUserInput, pin : Text) : async () {
+    if (not isValidMasterPin(pin)) {
+      Runtime.trap("Unauthorized: Invalid master PIN");
+    };
+
+    let user : AppUser = {
+      id = input.id;
+      name = input.name;
+      passcode = input.passcode;
+      status = "active";
+      templeId = input.templeId;
+      role = input.role;
+      createdAt = Time.now();
+    };
+    users.add(input.id, user);
+  };
+
+  public shared func updateUserWithPin(id : Text, input : CreateUserInput, pin : Text) : async () {
+    if (not isValidMasterPin(pin)) {
+      Runtime.trap("Unauthorized: Invalid master PIN");
+    };
+
+    let existingUser = switch (users.get(id)) {
+      case (?u) { u };
+      case (null) { Runtime.trap("User not found") };
+    };
+
+    let user : AppUser = {
+      id = input.id;
+      name = input.name;
+      passcode = input.passcode;
+      status = existingUser.status;
+      templeId = input.templeId;
+      role = input.role;
+      createdAt = existingUser.createdAt;
+    };
+    users.add(id, user);
+  };
+
+  public shared func toggleUserStatusWithPin(id : Text, pin : Text) : async () {
+    if (not isValidMasterPin(pin)) {
+      Runtime.trap("Unauthorized: Invalid master PIN");
+    };
+
+    let user = switch (users.get(id)) {
+      case (?u) { u };
+      case (null) { Runtime.trap("User not found") };
+    };
+
+    let newStatus = if (user.status == "active") { "inactive" } else { "active" };
+    let updatedUser = { user with status = newStatus };
     users.add(id, updatedUser);
   };
 
@@ -558,20 +602,6 @@ actor {
   public query ({ caller }) func getAuditLogsByTemple(templeId : Text) : async [AuditLog] {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only Admin/Master can view audit logs");
-    };
-
-    // Non-master admins can only view logs for their temple
-    if (not isCallerMaster(caller)) {
-      switch (getAppUserForCaller(caller)) {
-        case (?callerUser) {
-          if (templeId != callerUser.templeId) {
-            Runtime.trap("Unauthorized: You can only view audit logs for your temple");
-          };
-        };
-        case (null) {
-          Runtime.trap("Unauthorized: Admin user profile not found");
-        };
-      };
     };
 
     auditLogs.values().filter(func(log) { log.templeId == templeId }).toArray();
@@ -582,24 +612,7 @@ actor {
       Runtime.trap("Unauthorized: Only Admin/Master can view audit logs");
     };
 
-    let logs = auditLogs.values().filter(func(log) { log.receiptId == receiptId }).toArray();
-    
-    // Verify access to temple
-    if (logs.size() > 0 and not isCallerMaster(caller)) {
-      let templeId = logs[0].templeId;
-      switch (getAppUserForCaller(caller)) {
-        case (?callerUser) {
-          if (templeId != callerUser.templeId) {
-            Runtime.trap("Unauthorized: You can only view audit logs for your temple");
-          };
-        };
-        case (null) {
-          Runtime.trap("Unauthorized: Admin user profile not found");
-        };
-      };
-    };
-
-    logs;
+    auditLogs.values().filter(func(log) { log.receiptId == receiptId }).toArray();
   };
 
   // Receipt Counter Query (for frontend display)

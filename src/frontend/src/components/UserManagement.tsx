@@ -28,10 +28,16 @@ export function UserManagement({ user, temples }: UserManagementProps) {
   const templeIdForQuery =
     user.role === "master" ? selectedTemple : user.templeId;
 
+  const isMasterUser = user.role === "master";
+  const masterPin = user.passcode || "1234";
+
   const { data: users = [], isLoading } = useQuery({
     queryKey: ["users", templeIdForQuery],
     queryFn: async () => {
       if (!actor) return [];
+      if (isMasterUser) {
+        return actor.getUsersByTempleWithPin(templeIdForQuery, masterPin);
+      }
       return actor.getUsersByTemple(templeIdForQuery);
     },
     enabled: !!actor && !isFetching,
@@ -48,7 +54,11 @@ export function UserManagement({ user, temples }: UserManagementProps) {
       templeId: string;
     }) => {
       if (!actor) throw new Error("Actor not ready");
-      await actor.addUser(data);
+      if (isMasterUser) {
+        await actor.addUserWithPin(data, masterPin);
+      } else {
+        await actor.addUser(data);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
@@ -63,7 +73,11 @@ export function UserManagement({ user, temples }: UserManagementProps) {
   const toggleMutation = useMutation({
     mutationFn: async (id: string) => {
       if (!actor) throw new Error("Actor not ready");
-      await actor.toggleUserStatus(id);
+      if (isMasterUser) {
+        await actor.toggleUserStatusWithPin(id, masterPin);
+      } else {
+        await actor.toggleUserStatus(id);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] });

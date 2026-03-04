@@ -90,9 +90,13 @@ export function DonationForm({
       address: string;
       templeId: string;
       amount: bigint;
-      recNo: bigint;
     }) => {
       if (!actor) throw new Error("Actor not ready");
+      const isMasterUser = user.role === "master";
+      const masterPin = user.passcode || "1234";
+      if (isMasterUser) {
+        return actor.createDonationForTemple(data, masterPin);
+      }
       return actor.createDonation(data);
     },
     onSuccess: (created) => {
@@ -138,25 +142,36 @@ export function DonationForm({
       ? editTarget.time
       : new Date().toLocaleTimeString("hi-IN", { hour12: true }).toUpperCase();
 
-    const donationData = {
-      volunteerName: user.name,
-      formattedId: fmtId,
-      date,
-      donorName,
-      time,
-      templeType,
-      event: finalEvent,
-      address,
-      templeId,
-      amount,
-      recNo,
-      timestamp: editTarget ? editTarget.timestamp : BigInt(Date.now()),
-    };
-
     if (editTarget) {
+      const donationData: Donation = {
+        volunteerName: user.name,
+        formattedId: fmtId,
+        date,
+        donorName,
+        time,
+        templeType,
+        event: finalEvent,
+        address,
+        templeId,
+        amount,
+        recNo,
+        timestamp: editTarget.timestamp,
+      };
       onSaveEdit(editTarget, donationData);
     } else {
-      createMutation.mutate(donationData);
+      const createData = {
+        volunteerName: user.name,
+        formattedId: fmtId,
+        date,
+        donorName,
+        time,
+        templeType,
+        event: finalEvent,
+        address,
+        templeId,
+        amount,
+      };
+      createMutation.mutate(createData);
     }
   };
 

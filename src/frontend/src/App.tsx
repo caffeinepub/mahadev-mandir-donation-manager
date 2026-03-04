@@ -77,7 +77,7 @@ function AppShell() {
       // Seed default temple if empty and actor is ready
       if (list.length === 0) {
         try {
-          await actor.addTemple(DEFAULT_TEMPLE);
+          await actor.addTempleWithPin(DEFAULT_TEMPLE, MASTER_RECOVERY_PASS);
           return [DEFAULT_TEMPLE];
         } catch {
           return [];
@@ -133,7 +133,7 @@ function AppShell() {
           return;
         }
 
-        const appUser = await actor.getUser(uid);
+        const appUser = await actor.getUserWithPin(uid, MASTER_RECOVERY_PASS);
         if (!appUser || !appUser.id) {
           toast.error("यूजर नहीं मिला!");
           setIsLoggingIn(false);
@@ -421,7 +421,7 @@ function AppShell() {
             transition={{ duration: 0.2 }}
           >
             {tab === "temples" && user.role === "master" && (
-              <TempleManagement />
+              <TempleManagement userPasscode={user.passcode || DEFAULT_PASS} />
             )}
             {tab === "volunteers" && user.role !== "volunteer" && (
               <UserManagement user={user} temples={temples} />

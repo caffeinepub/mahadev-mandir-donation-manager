@@ -42,7 +42,6 @@ export interface CreateDonationInput {
   'address' : string,
   'templeId' : string,
   'amount' : bigint,
-  'recNo' : bigint,
 }
 export interface CreateUserInput {
   'id' : string,
@@ -88,12 +87,19 @@ export type UserRole = { 'admin' : null } |
 export interface _SERVICE {
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
   'addTemple' : ActorMethod<[Temple], undefined>,
+  'addTempleWithPin' : ActorMethod<[Temple, string], undefined>,
   'addUser' : ActorMethod<[CreateUserInput], undefined>,
+  'addUserWithPin' : ActorMethod<[CreateUserInput, string], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'createDonation' : ActorMethod<[CreateDonationInput], Donation>,
+  'createDonationForTemple' : ActorMethod<
+    [CreateDonationInput, string],
+    Donation
+  >,
   'deactivateUser' : ActorMethod<[string], undefined>,
   'deleteDonation' : ActorMethod<[string, string], undefined>,
   'deleteTemple' : ActorMethod<[string], undefined>,
+  'deleteTempleWithPin' : ActorMethod<[string, string], undefined>,
   'getAllTemples' : ActorMethod<[], Array<Temple>>,
   'getAuditLogsByReceipt' : ActorMethod<[string], Array<AuditLog>>,
   'getAuditLogsByTemple' : ActorMethod<[string], Array<AuditLog>>,
@@ -105,13 +111,21 @@ export interface _SERVICE {
   'getTemple' : ActorMethod<[string], Temple>,
   'getUser' : ActorMethod<[string], AppUser>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
+  'getUserWithPin' : ActorMethod<[string, string], AppUser>,
   'getUsersByTemple' : ActorMethod<[string], Array<AppUser>>,
+  'getUsersByTempleWithPin' : ActorMethod<[string, string], Array<AppUser>>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'toggleUserStatus' : ActorMethod<[string], undefined>,
+  'toggleUserStatusWithPin' : ActorMethod<[string, string], undefined>,
   'updateDonation' : ActorMethod<[string, Donation, string], undefined>,
   'updateTemple' : ActorMethod<[Temple], undefined>,
+  'updateTempleWithPin' : ActorMethod<[Temple, string], undefined>,
   'updateUser' : ActorMethod<[string, CreateUserInput], undefined>,
+  'updateUserWithPin' : ActorMethod<
+    [string, CreateUserInput, string],
+    undefined
+  >,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];

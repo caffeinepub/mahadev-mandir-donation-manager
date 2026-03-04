@@ -144,7 +144,6 @@ export interface CreateDonationInput {
     address: string;
     templeId: string;
     amount: bigint;
-    recNo: bigint;
 }
 export interface UserProfile {
     name: string;
@@ -169,12 +168,16 @@ export enum UserRole {
 export interface backendInterface {
     _initializeAccessControlWithSecret(userSecret: string): Promise<void>;
     addTemple(temple: Temple): Promise<void>;
+    addTempleWithPin(temple: Temple, pin: string): Promise<void>;
     addUser(input: CreateUserInput): Promise<void>;
+    addUserWithPin(input: CreateUserInput, pin: string): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     createDonation(input: CreateDonationInput): Promise<Donation>;
+    createDonationForTemple(input: CreateDonationInput, pin: string): Promise<Donation>;
     deactivateUser(id: string): Promise<void>;
     deleteDonation(formattedId: string, reason: string): Promise<void>;
     deleteTemple(id: string): Promise<void>;
+    deleteTempleWithPin(id: string, pin: string): Promise<void>;
     getAllTemples(): Promise<Array<Temple>>;
     getAuditLogsByReceipt(receiptId: string): Promise<Array<AuditLog>>;
     getAuditLogsByTemple(templeId: string): Promise<Array<AuditLog>>;
@@ -186,13 +189,18 @@ export interface backendInterface {
     getTemple(id: string): Promise<Temple>;
     getUser(id: string): Promise<AppUser>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
+    getUserWithPin(id: string, pin: string): Promise<AppUser>;
     getUsersByTemple(templeId: string): Promise<Array<AppUser>>;
+    getUsersByTempleWithPin(templeId: string, pin: string): Promise<Array<AppUser>>;
     isCallerAdmin(): Promise<boolean>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
     toggleUserStatus(id: string): Promise<void>;
+    toggleUserStatusWithPin(id: string, pin: string): Promise<void>;
     updateDonation(formattedId: string, donation: Donation, reason: string): Promise<void>;
     updateTemple(temple: Temple): Promise<void>;
+    updateTempleWithPin(temple: Temple, pin: string): Promise<void>;
     updateUser(id: string, input: CreateUserInput): Promise<void>;
+    updateUserWithPin(id: string, input: CreateUserInput, pin: string): Promise<void>;
 }
 import type { AuditLog as _AuditLog, Time as _Time, UserProfile as _UserProfile, UserRole as _UserRole } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
@@ -225,6 +233,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async addTempleWithPin(arg0: Temple, arg1: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.addTempleWithPin(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.addTempleWithPin(arg0, arg1);
+            return result;
+        }
+    }
     async addUser(arg0: CreateUserInput): Promise<void> {
         if (this.processError) {
             try {
@@ -236,6 +258,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.addUser(arg0);
+            return result;
+        }
+    }
+    async addUserWithPin(arg0: CreateUserInput, arg1: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.addUserWithPin(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.addUserWithPin(arg0, arg1);
             return result;
         }
     }
@@ -264,6 +300,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.createDonation(arg0);
+            return result;
+        }
+    }
+    async createDonationForTemple(arg0: CreateDonationInput, arg1: string): Promise<Donation> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.createDonationForTemple(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.createDonationForTemple(arg0, arg1);
             return result;
         }
     }
@@ -306,6 +356,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.deleteTemple(arg0);
+            return result;
+        }
+    }
+    async deleteTempleWithPin(arg0: string, arg1: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.deleteTempleWithPin(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.deleteTempleWithPin(arg0, arg1);
             return result;
         }
     }
@@ -463,6 +527,20 @@ export class Backend implements backendInterface {
             return from_candid_opt_n7(this._uploadFile, this._downloadFile, result);
         }
     }
+    async getUserWithPin(arg0: string, arg1: string): Promise<AppUser> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getUserWithPin(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getUserWithPin(arg0, arg1);
+            return result;
+        }
+    }
     async getUsersByTemple(arg0: string): Promise<Array<AppUser>> {
         if (this.processError) {
             try {
@@ -474,6 +552,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.getUsersByTemple(arg0);
+            return result;
+        }
+    }
+    async getUsersByTempleWithPin(arg0: string, arg1: string): Promise<Array<AppUser>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getUsersByTempleWithPin(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getUsersByTempleWithPin(arg0, arg1);
             return result;
         }
     }
@@ -519,6 +611,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async toggleUserStatusWithPin(arg0: string, arg1: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.toggleUserStatusWithPin(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.toggleUserStatusWithPin(arg0, arg1);
+            return result;
+        }
+    }
     async updateDonation(arg0: string, arg1: Donation, arg2: string): Promise<void> {
         if (this.processError) {
             try {
@@ -547,6 +653,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async updateTempleWithPin(arg0: Temple, arg1: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.updateTempleWithPin(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.updateTempleWithPin(arg0, arg1);
+            return result;
+        }
+    }
     async updateUser(arg0: string, arg1: CreateUserInput): Promise<void> {
         if (this.processError) {
             try {
@@ -558,6 +678,20 @@ export class Backend implements backendInterface {
             }
         } else {
             const result = await this.actor.updateUser(arg0, arg1);
+            return result;
+        }
+    }
+    async updateUserWithPin(arg0: string, arg1: CreateUserInput, arg2: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.updateUserWithPin(arg0, arg1, arg2);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.updateUserWithPin(arg0, arg1, arg2);
             return result;
         }
     }
