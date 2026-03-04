@@ -1,0 +1,194 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Temple Donation System — Sacred Crimson + Saffron palette */
+
+@font-face {
+  font-family: "Fraunces";
+  src: url("/assets/fonts/Fraunces.woff2") format("woff2");
+  font-display: swap;
+  font-weight: 100 900;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Playfair Display";
+  src: url("/assets/fonts/PlayfairDisplay.woff2") format("woff2");
+  font-display: swap;
+  font-weight: 400 900;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "General Sans";
+  src: url("/assets/fonts/GeneralSans.woff2") format("woff2");
+  font-display: swap;
+  font-weight: 200 700;
+  font-style: normal;
+}
+
+@layer base {
+  :root {
+    --radius: 0.75rem;
+
+    /* Sacred temple palette — deep crimson + saffron + ivory */
+    --background: 0.12 0.005 30;
+    --foreground: 0.95 0.01 50;
+
+    --card: 0.15 0.01 30;
+    --card-foreground: 0.95 0.01 50;
+
+    --popover: 0.18 0.01 30;
+    --popover-foreground: 0.95 0.01 50;
+
+    /* Crimson primary */
+    --primary: 0.48 0.19 22;
+    --primary-foreground: 0.97 0.01 50;
+
+    --secondary: 0.22 0.015 30;
+    --secondary-foreground: 0.9 0.01 50;
+
+    --muted: 0.20 0.01 30;
+    --muted-foreground: 0.60 0.02 40;
+
+    /* Saffron accent */
+    --accent: 0.72 0.18 55;
+    --accent-foreground: 0.12 0.005 30;
+
+    --destructive: 0.50 0.22 22;
+    --destructive-foreground: 0.97 0.01 50;
+
+    --border: 0.28 0.02 30;
+    --input: 0.22 0.01 30;
+    --ring: 0.48 0.19 22;
+
+    --chart-1: 0.72 0.18 55;
+    --chart-2: 0.48 0.19 22;
+    --chart-3: 0.62 0.12 260;
+    --chart-4: 0.55 0.15 150;
+    --chart-5: 0.65 0.20 30;
+
+    --sidebar: 0.15 0.01 30;
+    --sidebar-foreground: 0.95 0.01 50;
+    --sidebar-primary: 0.48 0.19 22;
+    --sidebar-primary-foreground: 0.97 0.01 50;
+    --sidebar-accent: 0.72 0.18 55;
+    --sidebar-accent-foreground: 0.12 0.005 30;
+    --sidebar-border: 0.28 0.02 30;
+    --sidebar-ring: 0.48 0.19 22;
+
+    /* Temple custom tokens */
+    --crimson: 0.42 0.20 22;
+    --crimson-light: 0.55 0.18 22;
+    --crimson-dark: 0.30 0.18 22;
+    --saffron: 0.75 0.18 55;
+    --saffron-deep: 0.62 0.20 45;
+    --gold: 0.78 0.15 85;
+    --ivory: 0.97 0.015 85;
+    --ivory-dark: 0.92 0.02 70;
+    --master-border: 0.78 0.15 85;
+    --admin-border: 0.42 0.20 22;
+    --volunteer-border: 0.52 0.18 260;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: "General Sans", system-ui, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: oklch(var(--border)); border-radius: 4px; }
+}
+
+@layer utilities {
+  .font-devanagari {
+    font-family: "Noto Sans Devanagari", "General Sans", sans-serif;
+  }
+
+  .font-display-temple {
+    font-family: "Playfair Display", "Fraunces", Georgia, serif;
+  }
+
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  /* Pulsing status glows */
+  .pulse-online {
+    animation: pulse-online 2s ease-in-out infinite;
+  }
+  .pulse-offline {
+    animation: pulse-offline 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse-online {
+    0%, 100% { box-shadow: 0 0 0 0 oklch(0.65 0.20 145 / 0.7); }
+    50% { box-shadow: 0 0 0 8px oklch(0.65 0.20 145 / 0); }
+  }
+  @keyframes pulse-offline {
+    0%, 100% { box-shadow: 0 0 0 0 oklch(0.50 0.22 22 / 0.7); }
+    50% { box-shadow: 0 0 0 8px oklch(0.50 0.22 22 / 0); }
+  }
+
+  /* Glow dot */
+  .dot-online {
+    background-color: oklch(0.65 0.20 145);
+    box-shadow: 0 0 6px oklch(0.65 0.20 145 / 0.8);
+  }
+  .dot-offline {
+    background-color: oklch(0.55 0.22 22);
+    box-shadow: 0 0 6px oklch(0.55 0.22 22 / 0.8);
+  }
+
+  /* Receipt print styles */
+  @media print {
+    .no-print { display: none !important; }
+    body { background: white !important; }
+  }
+
+  /* Temple texture background */
+  .temple-bg {
+    background-color: oklch(var(--background));
+    background-image:
+      radial-gradient(circle at 20% 20%, oklch(0.42 0.20 22 / 0.05) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, oklch(0.72 0.18 55 / 0.05) 0%, transparent 50%);
+  }
+
+  /* Gold dot pattern */
+  .gold-dot-pattern {
+    background-image: radial-gradient(oklch(0.78 0.15 85 / 0.15) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+
+  /* Receipt background */
+  .receipt-bg {
+    background-color: #fffcf5;
+    background-image:
+      radial-gradient(circle at 10% 90%, rgba(183, 28, 28, 0.04) 0%, transparent 40%),
+      radial-gradient(circle at 90% 10%, rgba(255, 160, 0, 0.04) 0%, transparent 40%);
+  }
+
+  /* Saffron gradient text */
+  .text-saffron-gradient {
+    background: linear-gradient(135deg, oklch(0.78 0.15 85), oklch(0.72 0.18 55));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Role panel borders */
+  .border-role-master { border-color: oklch(var(--master-border)); }
+  .border-role-admin { border-color: oklch(var(--admin-border)); }
+  .border-role-volunteer { border-color: oklch(var(--volunteer-border)); }
+
+  .bg-role-master { background-color: oklch(0.14 0.01 240); }
+  .bg-role-admin { background-color: oklch(0.16 0.05 22); }
+  .bg-role-volunteer { background-color: oklch(0.16 0.04 260); }
+}
